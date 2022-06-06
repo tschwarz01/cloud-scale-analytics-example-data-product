@@ -1,5 +1,4 @@
 
-
 resource "azurerm_monitor_action_group" "action_group" {
   for_each            = local.action_groups
   name                = each.value.name
@@ -43,15 +42,15 @@ resource "azurerm_monitor_metric_alert" "alerts" {
 }
 
 
-resource "azurerm_portal_dashboard" "dashboards" {
-  for_each            = local.dashboards
-  name                = each.value.name
+resource "azurerm_portal_dashboard" "test" {
+  name                = "my-test-dashboard"
   resource_group_name = var.global_settings.resource_group_name
   location            = var.global_settings.location
-  tags                = try(var.tags, {})
-  dashboard_properties = templatefile("/modules/ops/dashboards/adf.tpl",
-    {
-      data_factory_name  = var.module_settings.data_factories[each.value.dashboard_properties.data_factory_key].name
-      data_factory_scope = var.module_settings.data_factories[each.value.dashboard_properties.data_factory_key].id
+  dashboard_properties = templatefile("/modules/ops/dashboards/adf_pipeline_mon.tpl", {
+    data_factory_scope = var.module_settings.data_factories["dp01"].id
+    data_factory_name  = var.module_settings.data_factories["dp01"].name
   })
 }
+
+
+

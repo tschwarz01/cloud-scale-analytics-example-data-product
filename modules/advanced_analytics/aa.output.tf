@@ -27,3 +27,26 @@ output "aml_spark" {
 output "private_endpoints" {
   value = module.private_endpoints
 }
+
+
+output "application_insights" {
+  value = azurerm_application_insights.appinsights
+}
+
+
+output "container_registries" {
+  value = azurerm_container_registry.acr
+}
+
+
+output "keyvaults" {
+  value = module.keyvault
+}
+
+output "storage_accounts" {
+  value = azurerm_storage_account.stg
+}
+
+output "storage_containers" {
+  value = azurerm_storage_container.container
+}

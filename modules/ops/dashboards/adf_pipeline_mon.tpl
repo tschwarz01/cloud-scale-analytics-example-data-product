@@ -11,13 +11,7 @@
                         "colSpan": 6
                     },
                     "metadata": {
-                        "inputs": [{
-                            "name": "options",
-                            "isOptional": true
-                        }, {
-                            "name": "sharedTimeRange",
-                            "isOptional": true
-                        }],
+                        "inputs": [],
                         "type": "Extension/HubsExtension/PartType/MonitorChartPart",
                         "settings": {
                             "content": {
@@ -28,14 +22,14 @@
                                                 "id": "${data_factory_scope}"
                                             },
                                             "name": "PipelineFailedRuns",
-                                            "aggregationType": 1,
+                                            "aggregationType": 7,
                                             "namespace": "microsoft.datafactory/factories",
                                             "metricVisualization": {
                                                 "displayName": "Failed pipeline runs metrics",
                                                 "resourceDisplayName": "${data_factory_name}"
                                             }
                                         }],
-                                        "title": "Count Failed activity runs metrics for dataFactoryNamedataFactoryName",
+                                        "title": "Count Failed pipeline runs metrics for ${data_factory_name}",
                                         "titleKind": 1,
                                         "visualization": {
                                             "chartType": 2,
@@ -66,17 +60,11 @@
                     "position": {
                         "x": 6,
                         "y": 0,
-                        "rowSpan": 4,
-                        "colSpan": 6
+                        "colSpan": 6,
+                        "rowSpan": 4
                     },
                     "metadata": {
-                        "inputs": [{
-                            "name": "options",
-                            "isOptional": true
-                        }, {
-                            "name": "sharedTimeRange",
-                            "isOptional": true
-                        }],
+                        "inputs": [],
                         "type": "Extension/HubsExtension/PartType/MonitorChartPart",
                         "settings": {
                             "content": {
@@ -84,17 +72,17 @@
                                     "chart": {
                                         "metrics": [{
                                             "resourceMetadata": {
-                                                "id": "dataFactoryScopedataFactoryScopedataFactoryScope"
+                                                "id": "${data_factory_scope}"
                                             },
                                             "name": "PipelineSucceededRuns",
                                             "aggregationType": 1,
                                             "namespace": "microsoft.datafactory/factories",
                                             "metricVisualization": {
                                                 "displayName": "Succeeded pipeline runs metrics",
-                                                "resourceDisplayName": "dataFactoryNamedataFactoryNamedataFactoryName"
+                                                "resourceDisplayName": "${data_factory_name}"
                                             }
                                         }],
-                                        "title": "Sum Succeeded pipeline runs metrics for dataFactoryNamedataFactoryNamedataFactoryName",
+                                        "title": "Sum Succeeded pipeline runs metrics for ${data_factory_name}",
                                         "titleKind": 1,
                                         "visualization": {
                                             "chartType": 2,
@@ -122,10 +110,7 @@
                     }
                 }
             }
-
-        },
-        "metadata": {
-            "model": {}
         }
     }
+
 }

@@ -1,11 +1,137 @@
 locals {
 
+  storage_accounts = {
+
+    dp01_synapse = {
+      name                     = "dp01synapse"
+      resource_group_key       = "data_product01"
+      location                 = var.global_settings.location
+      account_kind             = "BlockBlobStorage"
+      account_tier             = var.module_settings.adls_account_tier
+      account_replication_type = var.module_settings.adls_account_replication_type
+      is_hns_enabled           = true
+    }
+  }
+
+
+  filesystems = {
+    dp01 = {
+      name        = "dp01synapsefs"
+      storage_key = "dp01_synapse"
+    }
+  }
+
+
+  data_factory = {
+    dp01 = {
+      name                            = "dp01"
+      resource_group_key              = "data_product01"
+      managed_virtual_network_enabled = true
+      enable_system_msi               = true
+
+      diagnostic_profiles = {
+        central_logs_region1 = {
+          definition_key   = "azure_data_factory"
+          destination_type = "log_analytics"
+          destination_key  = "central_logs"
+        }
+      }
+
+      private_endpoints = {
+        dp01-factory = {
+          name               = "adf-dp01-acct"
+          subnet_key         = "private_endpoints"
+          resource_group_key = "data_product01"
+
+          private_service_connection = {
+            name              = "adf-dp01-acct"
+            subresource_names = ["dataFactory"]
+          }
+
+          private_dns = {
+            zone_group_name = "default"
+            keys            = ["privatelink.datafactory.azure.net"]
+          }
+        }
+        dp01-portal = {
+          name               = "adf-dp01-portal"
+          subnet_key         = "private_endpoints"
+          resource_group_key = "data_product01"
+
+          private_service_connection = {
+            name              = "adf-dp01-portal"
+            subresource_names = ["portal"]
+          }
+
+          private_dns = {
+            zone_group_name = "default"
+            keys            = ["privatelink.adf.azure.com"]
+          }
+        }
+
+      }
+    }
+  }
+
+
+  keyvaults = {
+
+    dp01 = {
+      name                      = "dp01"
+      location                  = var.global_settings.location
+      resource_group_key        = "data_product01"
+      sku_name                  = "standard"
+      enable_rbac_authorization = true
+      soft_delete_enabled       = true
+      purge_protection_enabled  = false
+
+      diagnostic_profiles = {
+        hivekv = {
+          definition_key   = "azure_key_vault"
+          destination_type = "log_analytics"
+          destination_key  = "central_logs"
+        }
+      }
+
+      private_endpoints = {
+        vault = {
+          name               = "dp01kv"
+          resource_group_key = "data_product01"
+          location           = var.global_settings.location
+          vnet_key           = "vnet"
+          subnet_key         = "private_endpoints"
+
+          private_service_connection = {
+            name                 = "dp01kv"
+            is_manual_connection = false
+            subresource_names    = ["vault"]
+          }
+
+          private_dns = {
+            zone_group_name = "default"
+            keys            = ["privatelink.vaultcore.azure.net"]
+          }
+        }
+      }
+    }
+  }
+
+
+  role_assignments = {
+    kvsyn = {
+      scope                = module.keyvault["dp01"].id
+      role_definition_name = "Key Vault Secrets Officer"
+      principal_id         = var.global_settings.client_config.object_id
+    }
+  }
+
+
   synapse_workspaces = {
     dp01 = {
       name                    = "syn-dp01-ws"
       resource_group_key      = "data_product01"
       sql_administrator_login = "dbadmin"
-      gen2_filesystem_id      = var.module_settings.gen2_filesystems["dp01"].id
+      gen2_filesystem_id      = azurerm_storage_data_lake_gen2_filesystem.gen2["dp01"].id
       # sql_administrator_login_password = "<string password>"   # If not set use module autogenerate a strong password and stores it in the keyvault
       keyvault_key                    = "dp01"
       managed_virtual_network_enabled = true
@@ -32,6 +158,7 @@ locals {
       }
     }
   }
+
 
   synapse_sql_pools = {
     dp01_pool = {
@@ -136,6 +263,39 @@ locals {
       private_dns = {
         zone_group_name = "default"
         keys            = ["privatelink.dev.azuresynapse.net"]
+      }
+    }
+
+    syn_blob = {
+      resource_id        = azurerm_storage_account.stg["dp01_synapse"].id
+      name               = "dp01-syn-stg-blob"
+      subnet_key         = "private_endpoints"
+      resource_group_key = "data_product01"
+
+      private_service_connection = {
+        name              = "dp01-syn-stg-blob"
+        subresource_names = ["blob"]
+      }
+
+      private_dns = {
+        zone_group_name = "default"
+        keys            = ["privatelink.blob.core.windows.net"]
+      }
+    }
+    syn_dfs = {
+      resource_id        = azurerm_storage_account.stg["dp01_synapse"].id
+      name               = "dp01-syn-stg-dfs"
+      subnet_key         = "private_endpoints"
+      resource_group_key = "data_product01"
+
+      private_service_connection = {
+        name              = "dp01-syn-stg-dfs"
+        subresource_names = ["dfs"]
+      }
+
+      private_dns = {
+        zone_group_name = "default"
+        keys            = ["privatelink.dfs.core.windows.net"]
       }
     }
   }
