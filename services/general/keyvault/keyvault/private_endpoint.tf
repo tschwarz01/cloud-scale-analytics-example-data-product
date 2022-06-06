@@ -4,7 +4,7 @@ module "private_endpoint" {
   for_each = var.settings.private_endpoints
 
   location                   = try(each.value.location, var.global_settings.location)
-  resource_group_name        = try(each.value.resource_group_name, var.combined_objects_core.resource_groups[try(each.value.resource_group.key, each.value.resource_group_key)].name)
+  resource_group_name        = try(var.global_settings.resource_group_name, each.value.resource_group_name, var.combined_objects_core.resource_groups[try(each.value.resource_group.key, each.value.resource_group_key)].name)
   resource_id                = azurerm_key_vault.kv.id
   name                       = "${var.global_settings.name}-${each.value.name}"
   private_service_connection = each.value.private_service_connection

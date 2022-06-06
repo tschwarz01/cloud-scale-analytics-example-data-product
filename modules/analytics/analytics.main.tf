@@ -1,4 +1,55 @@
 
+resource "azurerm_storage_account" "stg" {
+  for_each = local.storage_accounts
+
+  name                            = "${var.global_settings.name_clean}${each.value.name}"
+  resource_group_name             = var.global_settings.resource_group_name
+  location                        = var.global_settings.location
+  account_kind                    = each.value.account_kind
+  account_tier                    = each.value.account_tier
+  account_replication_type        = each.value.account_replication_type
+  min_tls_version                 = "TLS1_2"
+  allow_nested_items_to_be_public = false
+  is_hns_enabled                  = each.value.is_hns_enabled
+  tags                            = try(var.tags, {})
+}
+
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "gen2" {
+  for_each = local.filesystems
+
+  name               = each.value.name
+  storage_account_id = azurerm_storage_account.stg[each.value.storage_key].id
+}
+
+
+module "data_factory" {
+  source   = "../../services/general/data_factory/data_factory"
+  for_each = local.data_factory
+
+  name                  = "${var.global_settings.name}-${each.value.name}"
+  global_settings       = var.global_settings
+  settings              = each.value
+  location              = var.global_settings.location
+  resource_group_name   = var.global_settings.resource_group_name
+  combined_objects_core = var.combined_objects_core
+  tags                  = var.tags
+}
+
+
+module "keyvault" {
+  source   = "../../services/general/keyvault/keyvault"
+  for_each = local.keyvaults
+
+  global_settings       = var.global_settings
+  settings              = each.value
+  location              = var.global_settings.location
+  resource_group_name   = var.global_settings.resource_group_name
+  name                  = "${var.global_settings.name}-${each.value.name}"
+  tags                  = var.tags
+  combined_objects_core = var.combined_objects_core
+}
+
 
 resource "random_password" "sql_admin" {
   count = try(local.synapse_workspaces["synapse_workspace_shared"].sql_administrator_login_password, null) == null ? 1 : 0
@@ -6,12 +57,9 @@ resource "random_password" "sql_admin" {
   length           = 128
   special          = true
   upper            = true
-  number           = true
+  numeric          = true
   override_special = "$#%"
 }
-
-
-
 
 
 resource "azurerm_key_vault_secret" "sql_admin_password" {
@@ -19,7 +67,7 @@ resource "azurerm_key_vault_secret" "sql_admin_password" {
 
   name         = "dp01-synapse-sql-admin-password"
   value        = random_password.sql_admin.0.result
-  key_vault_id = var.module_settings.keyvaults["dp01"].id
+  key_vault_id = module.keyvault["dp01"].id
 
   lifecycle {
     ignore_changes = [
@@ -34,7 +82,7 @@ resource "azurerm_key_vault_secret" "sql_admin" {
 
   name         = "dp01-synapse-sql-admin-username"
   value        = local.synapse_workspaces["dp01"].sql_administrator_login
-  key_vault_id = var.module_settings.keyvaults["dp01"].id
+  key_vault_id = module.keyvault["dp01"].id
 }
 
 
@@ -43,7 +91,7 @@ resource "azurerm_key_vault_secret" "synapse_name" {
 
   name         = "dp01-synapse-name"
   value        = "${var.global_settings.name}-${local.synapse_workspaces["dp01"].name}"
-  key_vault_id = var.module_settings.keyvaults["dp01"].id
+  key_vault_id = module.keyvault["dp01"].id
 }
 
 
@@ -52,7 +100,7 @@ resource "azurerm_key_vault_secret" "synapse_rg_name" {
 
   name         = "shared-synapse-resource-group-name"
   value        = var.global_settings.resource_group_name
-  key_vault_id = var.module_settings.keyvaults["dp01"].id
+  key_vault_id = module.keyvault["dp01"].id
 }
 
 
@@ -243,4 +291,12 @@ module "private_endpoints" {
 }
 
 
+resource "azurerm_role_assignment" "role_assignment" {
+  depends_on = [module.keyvault]
+  for_each   = local.role_assignments
+
+  scope                = each.value.scope
+  role_definition_name = each.value.role_definition_name
+  principal_id         = each.value.principal_id
+}
 

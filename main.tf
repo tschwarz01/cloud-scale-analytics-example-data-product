@@ -40,20 +40,21 @@ data "terraform_remote_state" "dlz" {
 
 
 resource "azurerm_resource_group" "rg" {
-  name     = lower("${random_string.prefix[0].result}-${var.environment}-data_product0001")
-  location = local.global_settings.location
+  for_each = local.resource_groups
+  name     = lower("${random_string.prefix[0].result}-${var.environment}-${each.value.name}")
+  location = each.value.location
 }
 
 
-module "data-product-core" {
-  depends_on = [ azurerm_resource_group.rg ]
-  source                = "./modules/core"
-  global_settings       = local.global_settings
-  module_settings       = local.core_module_settings
-  combined_objects_core = local.combined_objects_core
-  remote                = local.remote_objects
-  tags                  = local.global_settings.tags
-}
+# module "data-product-core" {
+#   depends_on            = [azurerm_resource_group.rg]
+#   source                = "./modules/core"
+#   global_settings       = local.global_settings
+#   module_settings       = local.core_module_settings
+#   combined_objects_core = local.combined_objects_core
+#   remote                = local.remote_objects
+#   tags                  = local.global_settings.tags
+# }
 
 
 module "data-product-analytics" {
@@ -85,7 +86,3 @@ module "data-product-operations" {
   tags                  = local.global_settings.tags
 }
 
-
-output "gs" {
-  value = local.global_settings.client_config
-}

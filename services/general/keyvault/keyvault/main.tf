@@ -1,7 +1,7 @@
 
 resource "azurerm_key_vault" "kv" {
   name                            = "${var.global_settings.name}-${var.settings.name}"
-  resource_group_name             = var.resource_group_name
+  resource_group_name             = var.global_settings.resource_group_name
   location                        = var.location
   tenant_id                       = var.global_settings.client_config.tenant_id
   sku_name                        = try(var.settings.sku_name, "standard")

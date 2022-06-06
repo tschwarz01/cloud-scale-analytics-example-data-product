@@ -16,3 +16,23 @@ output "synapse_spark_pools" {
 output "private_endpoints" {
   value = module.private_endpoints
 }
+
+
+output "keyvaults" {
+  value = module.keyvault
+}
+
+
+output "gen2_filesystems" {
+  value = azurerm_storage_data_lake_gen2_filesystem.gen2
+}
+
+
+output "storage_accounts" {
+  value = azurerm_storage_account.stg
+}
+
+
+output "data_factories" {
+  value = module.data_factory
+}

@@ -1,4 +1,85 @@
 
+module "keyvault" {
+  source   = "../../services/general/keyvault/keyvault"
+  for_each = local.keyvaults
+
+  global_settings       = var.global_settings
+  settings              = each.value
+  location              = var.global_settings.location
+  resource_group_name   = var.global_settings.resource_group_name
+  name                  = "${var.global_settings.name}-${each.value.name}"
+  tags                  = var.tags
+  combined_objects_core = var.combined_objects_core
+}
+
+
+resource "azurerm_application_insights" "appinsights" {
+  for_each = local.app_insights
+
+  name                                = "${var.global_settings.name}-${each.value.name}"
+  resource_group_name                 = var.global_settings.resource_group_name
+  location                            = var.global_settings.location
+  workspace_id                        = var.combined_objects_core.diagnostics.diagnostics_destinations.log_analytics[each.value.law_workspace_key].log_analytics_resource_id
+  application_type                    = each.value.application_type
+  local_authentication_disabled       = false
+  disable_ip_masking                  = false
+  force_customer_storage_for_profiler = false
+  retention_in_days                   = 30
+  internet_query_enabled              = false
+  internet_ingestion_enabled          = true
+  tags                                = try(var.tags, {})
+}
+
+
+resource "azurerm_container_registry" "acr" {
+  for_each = local.azure_container_registries
+
+  name                          = "${var.global_settings.name_clean}${each.value.name}"
+  resource_group_name           = var.global_settings.resource_group_name
+  location                      = var.global_settings.location
+  sku                           = each.value.sku
+  admin_enabled                 = try(each.value.admin_enabled, false)
+  quarantine_policy_enabled     = try(each.value.quarantine_policy_enabled, false)
+  public_network_access_enabled = try(each.value.public_network_access_enabled, true)
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  dynamic "retention_policy" {
+    for_each = try(each.value.retention_policy, null) == null ? [] : [each.value.retention_policy]
+
+    content {
+      days    = lookup(retention_policy.value, "days", null)
+      enabled = lookup(retention_policy.value, "enabled", true)
+    }
+  }
+}
+
+
+resource "azurerm_storage_account" "stg" {
+  for_each = local.storage_accounts
+
+  name                            = "${var.global_settings.name_clean}${each.value.name}"
+  resource_group_name             = var.global_settings.resource_group_name
+  location                        = var.global_settings.location
+  account_kind                    = each.value.account_kind
+  account_tier                    = each.value.account_tier
+  account_replication_type        = each.value.account_replication_type
+  min_tls_version                 = "TLS1_2"
+  allow_nested_items_to_be_public = false
+  is_hns_enabled                  = each.value.is_hns_enabled
+  tags                            = try(var.tags, {})
+}
+
+
+resource "azurerm_storage_container" "container" {
+  for_each = local.containers
+
+  name                 = each.value.name
+  storage_account_name = azurerm_storage_account.stg[each.value.storage_key].name
+}
+
 
 resource "azurerm_cognitive_account" "cs" {
   for_each = local.cognitive_services_account
@@ -32,15 +113,15 @@ resource "azurerm_machine_learning_workspace" "aml-ws" {
   name                                         = "${var.global_settings.name}-${each.value.name}"
   location                                     = var.global_settings.location
   resource_group_name                          = var.global_settings.resource_group_name
-  application_insights_id                      = var.module_settings.application_insights[each.value.application_insights_key].id
-  key_vault_id                                 = var.module_settings.keyvaults[each.value.keyvault_key].id
-  storage_account_id                           = var.module_settings.storage_accounts[each.value.storage_account_key].id
-  container_registry_id                        = var.module_settings.container_registries[each.value.container_registry_key].id
+  application_insights_id                      = azurerm_application_insights.appinsights[each.value.application_insights_key].id
+  container_registry_id                        = azurerm_container_registry.acr[each.value.container_registry_key].id
+  storage_account_id                           = azurerm_storage_account.stg[each.value.storage_account_key].id
+  key_vault_id                                 = module.keyvault[each.value.keyvault_key].id
   sku_name                                     = try(each.value.sku_name, null)
   description                                  = try(each.value.description, null)
   friendly_name                                = try(each.value.friendly_name, null)
   image_build_compute_name                     = try(each.value.image_build_compute_name, "aml-image-builder")
-  public_access_behind_virtual_network_enabled = try(each.value.public_access_behind_virtual_network_enabled, false)
+  public_access_behind_virtual_network_enabled = try(each.value.public_access_behind_virtual_network_enabled, true)
   tags                                         = try(var.tags, {})
 
   identity {
