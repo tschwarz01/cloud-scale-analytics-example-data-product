@@ -58,17 +58,6 @@ resource "azurerm_resource_group" "rg" {
 }
 
 
-# module "data-product-core" {
-#   depends_on            = [azurerm_resource_group.rg]
-#   source                = "./modules/core"
-#   global_settings       = local.global_settings
-#   module_settings       = local.core_module_settings
-#   combined_objects_core = local.combined_objects_core
-#   remote                = local.remote_objects
-#   tags                  = local.global_settings.tags
-# }
-
-
 module "data-product-analytics" {
   source                = "./modules/analytics"
   global_settings       = local.global_settings
