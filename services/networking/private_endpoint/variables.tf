@@ -20,7 +20,6 @@ variable "name" {
 
 variable "private_service_connection" {
   description = "A private_service_connection block"
-
 }
 
 variable "private_dns_zones" {

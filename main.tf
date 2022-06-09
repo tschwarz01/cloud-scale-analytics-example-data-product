@@ -6,7 +6,15 @@ terraform {
     }
   }
   required_version = ">= 0.15"
-  #experiments      = [module_variable_optional_attrs]
+
+  backend "azurerm" {
+    subscription_id      = "47f7e6d7-0e52-4394-92cb-5f106bbc647f"
+    resource_group_name  = "rg-data-management-zone-terraform"
+    storage_account_name = "stgcafcsaterraformstate"
+    container_name       = "caf-csa-example-data-product"
+    key                  = "ex-data-product.terraform.tfstate"
+  }
+
 }
 
 provider "azurerm" {
@@ -31,10 +39,14 @@ data "azuread_client_config" "current" {}
 data "azurerm_subscription" "current" {}
 
 data "terraform_remote_state" "dlz" {
-  backend = "local"
+  backend = "azurerm"
 
   config = {
-    path = "../caf-csa-landing-zone/terraform.tfstate"
+    subscription_id      = var.remote_state_subscription_id
+    container_name       = var.remote_state_container_name
+    resource_group_name  = var.remote_state_resource_group_name
+    storage_account_name = var.remote_state_storage_account_name
+    key                  = var.remote_state_tfstate_key
   }
 }
 
