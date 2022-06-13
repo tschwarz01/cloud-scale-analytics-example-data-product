@@ -12,9 +12,9 @@ tags = {
 ##       Data Landing Zone
 ##      Remote State Settings
 #########################################
-remote_state_subscription_id      = "47f7e6d7-0e52-4394-92cb-5f106bbc647f"
-remote_state_resource_group_name  = "rg-data-management-zone-terraform"
-remote_state_storage_account_name = "stgcafcsaterraformstate"
+remote_state_subscription_id      = "893395a4-65a3-4525-99ea-2378c6e0dbed"
+remote_state_resource_group_name  = "rg-data-landing-zone-terraform"
+remote_state_storage_account_name = "stgcafcsatfstate"
 remote_state_container_name       = "caf-csa-landing-zone"
 remote_state_tfstate_key          = "dlz.terraform.tfstate"
 
@@ -40,7 +40,7 @@ remote_log_analytics_workspace_workspace_id = null # "f83cc9b8-e3d7-4af4-b3da-b5
 #########################################
 ##      Required Data Product Settings
 #########################################
-deploy_synapse_sql_pool      = false
+deploy_synapse_sql_pool      = true
 deploy_synapse_spark_pool    = true
 synapse_sql_pool_sku         = "DW100c"
 synapse_spark_min_node_count = 3
