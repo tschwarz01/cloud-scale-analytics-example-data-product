@@ -46,7 +46,7 @@ resource "azurerm_portal_dashboard" "test" {
   name                = "my-test-dashboard"
   resource_group_name = var.global_settings.resource_group_name
   location            = var.global_settings.location
-  dashboard_properties = templatefile("/modules/ops/dashboards/adf_pipeline_mon.tpl", {
+  dashboard_properties = templatefile("${path.module}/dashboards/adf_pipeline_mon.tpl", {
     data_factory_scope = var.module_settings.data_factories["dp01"].id
     data_factory_name  = var.module_settings.data_factories["dp01"].name
   })
