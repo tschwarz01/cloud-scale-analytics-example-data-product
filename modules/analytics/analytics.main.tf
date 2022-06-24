@@ -11,7 +11,7 @@ resource "azurerm_storage_account" "stg" {
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
   is_hns_enabled                  = each.value.is_hns_enabled
-  tags                            = try(var.tags, {})
+  tags                            = var.tags
 }
 
 
@@ -52,7 +52,7 @@ module "keyvault" {
 
 
 resource "random_password" "sql_admin" {
-  count = try(local.synapse_workspaces["synapse_workspace_shared"].sql_administrator_login_password, null) == null ? 1 : 0
+  count = lookup(local.synapse_workspaces["dp01"], "sql_administrator_login_password", null) == null ? 1 : 0
 
   length           = 128
   special          = true
@@ -63,7 +63,7 @@ resource "random_password" "sql_admin" {
 
 
 resource "azurerm_key_vault_secret" "sql_admin_password" {
-  count = try(local.synapse_workspaces["dp01"].sql_administrator_login_password, null) == null ? 1 : 0
+  count = lookup(local.synapse_workspaces["dp01"], "sql_administrator_login_password", null) == null ? 1 : 0
 
   name         = "dp01-synapse-sql-admin-password"
   value        = random_password.sql_admin.0.result
@@ -78,7 +78,7 @@ resource "azurerm_key_vault_secret" "sql_admin_password" {
 
 
 resource "azurerm_key_vault_secret" "sql_admin" {
-  count = try(local.synapse_workspaces["dp01"].sql_administrator_login_password, null) == null ? 1 : 0
+  count = lookup(local.synapse_workspaces["dp01"], "sql_administrator_login_password", null) == null ? 1 : 0
 
   name         = "dp01-synapse-sql-admin-username"
   value        = local.synapse_workspaces["dp01"].sql_administrator_login
@@ -87,7 +87,7 @@ resource "azurerm_key_vault_secret" "sql_admin" {
 
 
 resource "azurerm_key_vault_secret" "synapse_name" {
-  count = try(local.synapse_workspaces["dp01"].sql_administrator_login_password, null) == null ? 1 : 0
+  count = lookup(local.synapse_workspaces["dp01"], "sql_administrator_login_password", null) == null ? 1 : 0
 
   name         = "dp01-synapse-name"
   value        = "${var.global_settings.name}-${local.synapse_workspaces["dp01"].name}"
@@ -96,7 +96,7 @@ resource "azurerm_key_vault_secret" "synapse_name" {
 
 
 resource "azurerm_key_vault_secret" "synapse_rg_name" {
-  count = try(local.synapse_workspaces["dp01"].sql_administrator_login_password, null) == null ? 1 : 0
+  count = lookup(local.synapse_workspaces["dp01"], "sql_administrator_login_password", null) == null ? 1 : 0
 
   name         = "shared-synapse-resource-group-name"
   value        = var.global_settings.resource_group_name
@@ -111,19 +111,19 @@ resource "azurerm_synapse_workspace" "ws" {
   resource_group_name                  = var.global_settings.resource_group_name
   location                             = var.global_settings.location
   storage_data_lake_gen2_filesystem_id = each.value.gen2_filesystem_id
-  sql_administrator_login              = try(each.value.sql_administrator_login, "dbadmin")
-  sql_administrator_login_password     = try(each.value.sql_administrator_login_password, random_password.sql_admin.0.result)
-  managed_virtual_network_enabled      = try(each.value.managed_virtual_network_enabled, false)
-  sql_identity_control_enabled         = try(each.value.sql_identity_control_enabled, null)
-  managed_resource_group_name          = try(each.value.managed_resource_group_name, null)
-  tags                                 = try(var.tags, {})
+  sql_administrator_login              = lookup(each.value, "sql_administrator_login", "dbadmin")
+  sql_administrator_login_password     = lookup(each.value, "sql_administrator_login_password", random_password.sql_admin.0.result)
+  managed_virtual_network_enabled      = lookup(each.value, "managed_virtual_network_enabled", false)
+  sql_identity_control_enabled         = lookup(each.value, "sql_identity_control_enabled", null)
+  managed_resource_group_name          = lookup(each.value, "managed_resource_group_name", null)
+  tags                                 = var.tags
 
   identity {
     type = "SystemAssigned"
   }
 
   dynamic "aad_admin" {
-    for_each = try(each.value.aad_admin, {}) == {} ? [] : [1]
+    for_each = lookup(each.value, "aad_admin", {}) == {} ? [] : [1]
 
     content {
       login     = each.value.aad_admin.login
@@ -133,7 +133,7 @@ resource "azurerm_synapse_workspace" "ws" {
   }
 
   dynamic "sql_aad_admin" {
-    for_each = try(each.value.sql_aad_admin, {}) == {} ? [] : [1]
+    for_each = lookup(each.value, "sql_aad_admin", {}) == {} ? [] : [1]
 
     content {
       login     = each.value.sql_aad_admin.login
@@ -143,7 +143,7 @@ resource "azurerm_synapse_workspace" "ws" {
   }
 
   dynamic "azure_devops_repo" {
-    for_each = try(each.value.azure_devops_repo, {})
+    for_each = lookup(each.value, "azure_devops_repo", {})
 
     content {
       account_name    = each.value.azure_devops_repo.account_name
@@ -155,15 +155,15 @@ resource "azurerm_synapse_workspace" "ws" {
   }
 
   dynamic "customer_managed_key" {
-    for_each = try(each.value.customer_managed_key_versionless_id, null) == null ? [] : [1]
+    for_each = lookup(each.value, "customer_managed_key_versionless_id", null) == null ? [] : [1]
 
     content {
-      key_versionless_id = try(each.value.customer_managed_key_versionless_id, null)
+      key_versionless_id = lookup(each.value, "customer_managed_key_versionless_id", null)
     }
   }
 
   dynamic "github_repo" {
-    for_each = try(each.value.github_repo, {})
+    for_each = lookup(each.value, "github_repo", {})
 
     content {
       account_name    = each.value.github_repo.account_name
@@ -179,21 +179,21 @@ resource "azurerm_synapse_workspace" "ws" {
 resource "azurerm_synapse_sql_pool" "sql_pool" {
   for_each = { for k, v in local.synapse_sql_pools : k => v if var.module_settings.feature_flags.create_sql_pool == true }
 
-  name                 = try(each.value.name, "sharedsynpool")
+  name                 = lookup(each.value, "name", "sharedsynpool")
   synapse_workspace_id = azurerm_synapse_workspace.ws[each.value.synapse_workspace_key].id
-  sku_name             = try(each.value.sku_name, "DW100c")
-  create_mode          = try(each.value.create_mode, "Default")
-  collation            = try(each.value.collation, null)
-  data_encrypted       = try(each.value.data_encrypted, false)
-  recovery_database_id = try(each.value.create_mode, null) == "Recovery" ? each.value.recovery_database_id : null
-  tags                 = try(var.tags, {})
+  sku_name             = lookup(each.value, "sku_name", "DW100c")
+  create_mode          = lookup(each.value, "create_mode", "Default")
+  collation            = lookup(each.value, "collation", null)
+  data_encrypted       = lookup(each.value, "data_encrypted", false)
+  recovery_database_id = lookup(each.value, "create_mode", null) == "Recovery" ? lookup(each.value, "recovery_database_id", null) : null
+  tags                 = var.tags
 
   dynamic "restore" {
-    for_each = try(each.value.restore, {}) == {} ? [] : [1]
+    for_each = lookup(each.value, "restore", {}) == {} ? [] : [1]
 
     content {
-      source_database_id = try(each.value.restore.source_database_id)
-      point_in_time      = try(each.value.restore.point_in_time)
+      source_database_id = lookup(each.value.restore, "source_database_id")
+      point_in_time      = lookup(each.value.restore, "point_in_time")
     }
   }
 }
@@ -206,14 +206,14 @@ resource "azurerm_synapse_spark_pool" "spark_pool" {
   synapse_workspace_id                = azurerm_synapse_workspace.ws[each.value.synapse_workspace_key].id
   node_size_family                    = each.value.node_size_family
   node_size                           = each.value.node_size
-  node_count                          = try(each.value.node_count, null)
-  cache_size                          = try(each.value.cache_size, null)
-  compute_isolation_enabled           = try(each.value.node_size, null) == "XXXLarge" ? try(each.value.compute_isolation_enabled, null) : false
-  dynamic_executor_allocation_enabled = try(each.value.dynamic_executor_allocation_enabled, null)
-  session_level_packages_enabled      = try(each.value.session_level_packages_enabled, null)
-  spark_log_folder                    = try(each.value.spark_log_folder, "/logs")
-  spark_events_folder                 = try(each.value.spark_events_folder, "/events")
-  spark_version                       = try(each.value.spark_version, "2.4")
+  node_count                          = lookup(each.value, "node_count", null)
+  cache_size                          = lookup(each.value, "cache_size", null)
+  compute_isolation_enabled           = lookup(each.value, "node_size", null) == "XXXLarge" ? lookup(each.value, "compute_isolation_enabled", null) : false
+  dynamic_executor_allocation_enabled = lookup(each.value, "dynamic_executor_allocation_enabled", null)
+  session_level_packages_enabled      = lookup(each.value, "session_level_packages_enabled", null)
+  spark_log_folder                    = lookup(each.value, "spark_log_folder", "/logs")
+  spark_events_folder                 = lookup(each.value, "spark_events_folder", "/events")
+  spark_version                       = lookup(each.value, "spark_version", "2.4")
 
   auto_scale {
     max_node_count = each.value.auto_scale.max_node_count
@@ -225,7 +225,7 @@ resource "azurerm_synapse_spark_pool" "spark_pool" {
   }
 
   dynamic "library_requirement" {
-    for_each = try(each.value.library_requirement, {})
+    for_each = lookup(each.value, "library_requirement", {})
 
     content {
       content  = each.value.library_requirement.content
@@ -234,14 +234,14 @@ resource "azurerm_synapse_spark_pool" "spark_pool" {
   }
 
   dynamic "spark_config" {
-    for_each = try(each.value.spark_config, {})
+    for_each = lookup(each.value, "spark_config", {})
 
     content {
-      content  = try(each.value.spark_config.content, null)
-      filename = try(each.value.spark_config.filename, null)
+      content  = lookup(each.value.spark_config, "content", null)
+      filename = lookup(each.value.spark_config, "filename", null)
     }
   }
-  tags = try(var.tags, {})
+  tags = var.tags
 }
 
 
@@ -279,15 +279,15 @@ module "private_endpoints" {
   source   = "../../services/networking/private_endpoint"
   for_each = local.private_endpoints
 
-  location                   = try(each.value.location, var.global_settings.location, null)
+  location                   = lookup(each.value, "location", var.global_settings.location)
   resource_group_name        = var.global_settings.resource_group_name
   resource_id                = each.value.resource_id
   name                       = "${var.global_settings.name}-${each.value.name}"
   private_service_connection = each.value.private_service_connection
-  subnet_id                  = try(each.value.subnet_id, var.combined_objects_core.virtual_subnets[each.value.subnet_key].id)
+  subnet_id                  = lookup(each.value, "subnet_id", var.combined_objects_core.virtual_subnets[each.value.subnet_key].id)
   private_dns                = each.value.private_dns
   private_dns_zones          = var.combined_objects_core.private_dns_zones
-  tags                       = try(var.tags, {})
+  tags                       = var.tags
 }
 
 

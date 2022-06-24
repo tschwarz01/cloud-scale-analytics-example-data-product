@@ -5,7 +5,7 @@ resource "azurerm_monitor_action_group" "action_group" {
   resource_group_name = var.global_settings.resource_group_name
   short_name          = each.value.short_name
   enabled             = each.value.enabled
-  tags                = try(var.tags, {})
+  tags                = var.tags
 
   email_receiver {
     name                    = each.value.email_receiver.name
@@ -26,7 +26,7 @@ resource "azurerm_monitor_metric_alert" "alerts" {
   severity             = each.value.severity
   target_resource_type = each.value.target_resource_type
   window_size          = each.value.window_size
-  tags                 = try(var.tags, {})
+  tags                 = var.tags
 
   criteria {
     metric_namespace = each.value.criteria.metric_namespace

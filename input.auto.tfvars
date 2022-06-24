@@ -12,11 +12,11 @@ tags = {
 ##       Data Landing Zone
 ##      Remote State Settings
 #########################################
-remote_state_subscription_id      = "893395a4-65a3-4525-99ea-2378c6e0dbed"
-remote_state_resource_group_name  = "rg-data-landing-zone-terraform"
-remote_state_storage_account_name = "stgcafcsatfstate"
-remote_state_container_name       = "caf-csa-landing-zone"
-remote_state_tfstate_key          = "dlz.terraform.tfstate"
+# remote_state_subscription_id      = "00000000-0000-0000-0000-000000000000"
+# remote_state_resource_group_name  = "resource-group-name"
+# remote_state_storage_account_name = "storage-account-name"
+# remote_state_container_name       = "storage-account-container-name"
+# remote_state_tfstate_key          = "tf-state-file-name"
 
 
 #########################################
