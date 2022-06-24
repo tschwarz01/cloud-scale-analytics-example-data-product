@@ -7,13 +7,14 @@ terraform {
   }
   required_version = ">= 0.15"
 
-  backend "azurerm" {
-    subscription_id      = "893395a4-65a3-4525-99ea-2378c6e0dbed"
-    resource_group_name  = "rg-data-landing-zone-terraform"
-    storage_account_name = "stgcafcsatfstate"
-    container_name       = "caf-csa-example-data-product"
-    key                  = "ex-data-product.terraform.tfstate"
-  }
+  # backend "azurerm" {
+  #   subscription_id      = "00000000-0000-0000-0000-000000000000"
+  #   tenant_id            = "00000000-0000-0000-0000-000000000000"
+  #   resource_group_name  = "resource-group-name"
+  #   storage_account_name = "storage-account-name"
+  #   container_name       = "storage-container-name"
+  #   key                  = "terraform-statefile-key"
+  # }
 
 }
 

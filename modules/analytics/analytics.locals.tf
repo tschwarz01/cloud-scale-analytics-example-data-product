@@ -79,7 +79,7 @@ locals {
     dp01 = {
       name                      = "dp01"
       location                  = var.global_settings.location
-      resource_group_key        = "data_product01"
+      resource_group_key        = "dp01"
       sku_name                  = "standard"
       enable_rbac_authorization = true
       soft_delete_enabled       = true
@@ -96,7 +96,7 @@ locals {
       private_endpoints = {
         vault = {
           name               = "dp01kv"
-          resource_group_key = "data_product01"
+          resource_group_key = "dp01"
           location           = var.global_settings.location
           vnet_key           = "vnet"
           subnet_key         = "private_endpoints"
